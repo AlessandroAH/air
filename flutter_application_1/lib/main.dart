@@ -39,24 +39,38 @@ class _MyAppState extends State<MyApp> {
     super.dispose();
   }
 
-  Future<void> _record() async {
+Future<void> _record() async {
+  try {
     if (await Permission.microphone.request().isGranted && await Permission.manageExternalStorage.request().isGranted) {
       Directory? appDirectory = await getExternalStorageDirectory();
       if (appDirectory != null) {
         _path = '${appDirectory.path}/flutter_sound-tmp.wav';
         print(_path);
-        await _recorder!.startRecorder(toFile: _path, codec: Codec.pcm16WAV);
+        if (_recorder!.isStopped) {
+          await _recorder!.startRecorder(toFile: _path, codec: Codec.pcm16WAV);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Recording started')));
+        }
       } else {
         print('Unable to get the external storage directory');
       }
     } else {
       print('Microphone or storage permission not granted');
     }
+  } catch (e) {
+    print('Error occurred while recording: $e');
   }
+}
 
-  Future<void> _stop() async {
-    await _recorder!.stopRecorder();
+Future<void> _stop() async {
+  try {
+    if (!_recorder!.isStopped) {
+      await _recorder!.stopRecorder();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Recording stopped')));
+    }
+  } catch (e) {
+    print('Error occurred while stopping the recorder: $e');
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +123,7 @@ class _MyAppState extends State<MyApp> {
               ElevatedButton(
                 child: Text('Invia'),
                 onPressed: () {
-                  apiService.sendData(controller1.text);
+                  apiService.sendData(controller1.text + ","+ controller1.text);
                 },
               ),
               TextField(
