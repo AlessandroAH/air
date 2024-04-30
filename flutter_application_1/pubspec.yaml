@@ -12,7 +12,16 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.6
+
+  # Network
   http: ^0.13.3
+
+  # File and permission handling
+  permission_handler: ^8.1.6
+  path_provider: ^2.0.2
+
+  # Audio recording
+  flutter_sound: ^8.3.1
 
 dev_dependencies:
   flutter_test:

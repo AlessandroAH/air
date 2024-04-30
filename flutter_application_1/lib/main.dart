@@ -1,17 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/services/api_service.dart';
 import 'documenti_page.dart'; // Importa la tua classe DocumentiPage
+import 'package:flutter_sound/flutter_sound.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 void main() {
   runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
   final TextEditingController controller1 = TextEditingController();
   final TextEditingController controller2 = TextEditingController();
   final ApiService apiService = ApiService();
+  FlutterSoundRecorder? _recorder = FlutterSoundRecorder();
+  String? _path;
 
   String dropdownValue = 'Riassumi';
+
+  @override
+  void initState() {
+    super.initState();
+    _recorder!.openAudioSession().then((value) {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _recorder!.closeAudioSession();
+    _recorder = null;
+    super.dispose();
+  }
+
+  Future<void> _record() async {
+    if (await Permission.microphone.request().isGranted && await Permission.manageExternalStorage.request().isGranted) {
+      Directory? appDirectory = await getExternalStorageDirectory();
+      if (appDirectory != null) {
+        _path = '${appDirectory.path}/flutter_sound-tmp.wav';
+        print(_path);
+        await _recorder!.startRecorder(toFile: _path, codec: Codec.pcm16WAV);
+      } else {
+        print('Unable to get the external storage directory');
+      }
+    } else {
+      print('Microphone or storage permission not granted');
+    }
+  }
+
+  Future<void> _stop() async {
+    await _recorder!.stopRecorder();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +67,8 @@ class MyApp extends StatelessWidget {
           title: Text('Nome Utente'),
           actions: <Widget>[
             DropdownButton<String>(
-              items: <String>['Italiano', 'Inglese', 'Francese'].map((String value) {
+              items: <String>['Italiano', 'Inglese', 'Francese']
+                  .map((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
                   child: Text(value),
@@ -45,11 +91,15 @@ class MyApp extends StatelessWidget {
               DropdownButton<String>(
                 value: dropdownValue,
                 onChanged: (String? newValue) {
-                  // Accetta un argomento String? invece di String
-                  dropdownValue = newValue!;
+                  setState(() {
+                    dropdownValue = newValue!;
+                  });
                 },
-                items: <String>['Riassumi', 'Migliora', 'Crea risposta adeguata']
-                    .map<DropdownMenuItem<String>>((String value) {
+                items: <String>[
+                  'Riassumi',
+                  'Migliora',
+                  'Crea risposta adeguata'
+                ].map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(value),
@@ -87,10 +137,17 @@ class MyApp extends StatelessWidget {
                 label: 'Upload',
               ),
             ],
-            onTap: (int index) {
+            onTap: (int index) async {
               switch (index) {
                 case 0:
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => DocumentiPage()));
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => DocumentiPage()));
+                  break;
+                case 1:
+                  await _record();
+                  await Future.delayed(
+                      Duration(seconds: 5)); // Record for 1 second
+                  await _stop();
                   break;
               }
             },
