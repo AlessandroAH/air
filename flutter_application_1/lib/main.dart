@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/login_page.dart';
 import 'package:flutter_application_1/services/api_service.dart';
 import 'documenti_page.dart'; // Importa la tua classe DocumentiPage
 import 'package:flutter_sound/flutter_sound.dart';
@@ -22,7 +23,7 @@ class MyApp extends StatefulWidget {
 }
 
 //Classe per la creazione dell'interfaccia grafica
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   final TextEditingController controller1 = TextEditingController();
   final TextEditingController controller2 = TextEditingController();
   final ApiService apiService = ApiService();
@@ -31,6 +32,10 @@ class _MyAppState extends State<MyApp> {
 
   String dropdownValue = 'Riassumi';
   RispostaLunghezza _rispostaLunghezza = RispostaLunghezza.bassa;
+
+  //Variabili per il login utente
+  bool _isUserLoggedIn = false;
+  String _username = 'Nome Utente';
 
   //Metodi per la registrazione audio
 
@@ -117,120 +122,154 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          leading: Icon(Icons.account_circle),
-          title: Text('Nome Utente'),
-          actions: <Widget>[
-            DropdownButton<String>(
-              items: <String>['Italiano', 'Inglese', 'Francese']
-                  .map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (_) {},
-            )
-          ],
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              TextField(
-                controller: controller1,
-                decoration: InputDecoration(
-                  hintText: 'Inserisci dei dati',
-                ),
-              ),
+      home: DefaultTabController(
+        length: 1, // Numero di tabs
+        child: Scaffold(
+          appBar: AppBar(
+            leading: Builder(
+              builder: (BuildContext context) {
+                return _isUserLoggedIn // Modifica questa parte
+                    ? Icon(Icons.account_circle)
+                    : TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    LoginPage()), // Naviga alla pagina di login
+                          );
+                        },
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Icon(Icons.login), // Usa un'icona che preferisci
+                            Text(
+                              'Login',
+                              style: TextStyle(fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      );
+              },
+            ),
+            title: _isUserLoggedIn ? Text(_username) : null,
+            actions: <Widget>[
               DropdownButton<String>(
-                value: dropdownValue,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    dropdownValue = newValue!;
-                  });
-                },
-                items: <String>[
-                  'Riassumi',
-                  'Migliora',
-                  'Crea risposta adeguata'
-                ].map<DropdownMenuItem<String>>((String value) {
+                items: <String>['Italiano', 'Inglese', 'Francese']
+                    .map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(value),
                   );
                 }).toList(),
-              ),
-              ListTile(
-                title: const Text('Lunghezza Risposta:'),
-                trailing: DropdownButton<RispostaLunghezza>(
-                  value: _rispostaLunghezza,
-                  onChanged: (RispostaLunghezza? newValue) {
-                    setState(() {
-                      _rispostaLunghezza = newValue!;
-                    });
-                  },
-                  items: RispostaLunghezza.values.map((RispostaLunghezza value) {
-                    return DropdownMenuItem<RispostaLunghezza>(
-                      value: value,
-                      child: Text(value.toString().split('.').last),
-                    );
-                  }).toList(),
-                ),
-              ),
-              ElevatedButton(
-                child: Text('Invia'),
-                onPressed: () {
-                  apiService
-                      .sendData(controller1.text + "," + controller1.text + "," + _rispostaLunghezza.toString());
-                },
-              ),
-              TextField(
-                controller: controller2,
-                decoration: InputDecoration(
-                  hintText: 'Risoposta...',
-                ),
-                enabled: false,
+                onChanged: (_) {},
               ),
             ],
           ),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                TextField(
+                  controller: controller1,
+                  decoration: InputDecoration(
+                    hintText: 'Inserisci dei dati',
+                  ),
+                ),
+                DropdownButton<String>(
+                  value: dropdownValue,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      dropdownValue = newValue!;
+                    });
+                  },
+                  items: <String>[
+                    'Riassumi',
+                    'Migliora',
+                    'Crea risposta adeguata'
+                  ].map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                ),
+                ListTile(
+                  title: const Text('Lunghezza Risposta:'),
+                  trailing: DropdownButton<RispostaLunghezza>(
+                    value: _rispostaLunghezza,
+                    onChanged: (RispostaLunghezza? newValue) {
+                      setState(() {
+                        _rispostaLunghezza = newValue!;
+                      });
+                    },
+                    items:
+                        RispostaLunghezza.values.map((RispostaLunghezza value) {
+                      return DropdownMenuItem<RispostaLunghezza>(
+                        value: value,
+                        child: Text(value.toString().split('.').last),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                ElevatedButton(
+                  child: Text('Invia'),
+                  onPressed: () {
+                    apiService.sendData(controller1.text +
+                        "," +
+                        controller1.text +
+                        "," +
+                        _rispostaLunghezza.toString());
+                  },
+                ),
+                TextField(
+                  controller: controller2,
+                  decoration: InputDecoration(
+                    hintText: 'Risoposta...',
+                  ),
+                  enabled: false,
+                ),
+              ],
+            ),
+          ),
+          bottomNavigationBar: Builder(builder: (BuildContext context) {
+            return BottomNavigationBar(
+              items: const <BottomNavigationBarItem>[
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.description),
+                  label: 'Documenti',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.audiotrack),
+                  label: 'Audio',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.upload_file),
+                  label: 'Upload',
+                ),
+              ],
+              onTap: (int index) async {
+                switch (index) {
+                  case 0:
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => DocumentiPage()));
+                    break;
+                  case 1:
+                    await _record();
+                    await Future.delayed(
+                        Duration(seconds: 5)); // Record for 1 second
+                    await _stop();
+                    break;
+                  case 2:
+                    await _uploadFile();
+                    break;
+                }
+              },
+            );
+          }),
         ),
-        bottomNavigationBar: Builder(builder: (BuildContext context) {
-          return BottomNavigationBar(
-            items: const <BottomNavigationBarItem>[
-              BottomNavigationBarItem(
-                icon: Icon(Icons.description),
-                label: 'Documenti',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.audiotrack),
-                label: 'Audio',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.upload_file),
-                label: 'Upload',
-              ),
-            ],
-            onTap: (int index) async {
-              switch (index) {
-                case 0:
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => DocumentiPage()));
-                  break;
-                case 1:
-                  await _record();
-                  await Future.delayed(
-                      Duration(seconds: 5)); // Record for 1 second
-                  await _stop();
-                  break;
-                case 2:
-                  await _uploadFile();
-                  break;
-              }
-            },
-          );
-        }),
       ),
     );
   }
