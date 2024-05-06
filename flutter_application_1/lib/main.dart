@@ -11,6 +11,9 @@ import 'package:file_picker/file_picker.dart';
 //Valori possibili per la lunghezza della risposta
 enum RispostaLunghezza { bassa, media, alta }
 
+int selectedIndex =
+    0; // Aggiungi questa variabile per tenere traccia dell'indice selezionato
+
 //Classe principale dell'applicazione
 void main() {
   runApp(MyApp());
@@ -118,6 +121,25 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
     }
   }
 
+  Future<void> inviaDati() async {
+    switch (dropdownValue) {
+      case 'Riassumi':
+        controller2.text = (await apiService.sendDataRiassumi(
+            controller1.text, selectedIndex))!;
+        break;
+      case 'Migliora':
+        controller2.text = (await apiService.sendDataMigliora(
+            controller1.text, selectedIndex))!;
+        break;
+      case 'Crea risposta adeguata':
+        controller2.text = (await apiService.sendDataCreaRisposta(
+            controller1.text, selectedIndex))!;
+        break;
+      default:
+        print('Selezione non valida');
+    }
+  }
+
 //Metodo build per la creazione dell'interfaccia grafica
   @override
   Widget build(BuildContext context) {
@@ -201,6 +223,8 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                     onChanged: (RispostaLunghezza? newValue) {
                       setState(() {
                         _rispostaLunghezza = newValue!;
+                        selectedIndex = RispostaLunghezza.values.indexOf(
+                            newValue); // Aggiorna l'indice quando il valore cambia
                       });
                     },
                     items:
@@ -212,22 +236,10 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                     }).toList(),
                   ),
                 ),
-                ElevatedButton(
-                  child: Text('Invia'),
-                  onPressed: () {
-                    apiService.sendData(controller1.text +
-                        "," +
-                        controller1.text +
-                        "," +
-                        _rispostaLunghezza.toString());
-                  },
-                ),
-                TextField(
-                  controller: controller2,
-                  decoration: InputDecoration(
-                    hintText: 'Risoposta...',
-                  ),
-                  enabled: false,
+                ElevatedButton(child: Text('Invia'), onPressed: inviaDati),
+                SelectableText(
+                  controller2.text,
+                  showCursor: true,
                 ),
               ],
             ),

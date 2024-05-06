@@ -25,7 +25,7 @@ class _DocumentiPageState extends State<DocumentiPage> {
   }
 
   void _sendData() {
-    apiService.sendData(_controller.text + "," + _fileName!);
+    //apiService.sendData(_controller.text + "," + _fileName!);
   }
 
   @override
