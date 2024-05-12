@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/login_page.dart';
-import 'package:flutter_application_1/services/api_service.dart';
+import 'package:AIR/login_page.dart';
+import 'package:AIR/services/api_service.dart';
 import 'documenti_page.dart'; // Importa la tua classe DocumentiPage
 import 'package:flutter_sound/flutter_sound.dart';
 import 'dart:io';
@@ -33,6 +33,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   FlutterSoundRecorder? _recorder = FlutterSoundRecorder();
   String? _path;
 
+  //Variabili per la selezione del tipo di risposta
   String dropdownValue = 'Riassumi';
   RispostaLunghezza _rispostaLunghezza = RispostaLunghezza.bassa;
 
@@ -60,7 +61,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   }
 
   //Metodo per registrare l'audio
-  Future<void> _record() async {
+  Future<String?> _record() async {
     try {
       if (await Permission.microphone.request().isGranted &&
           await Permission.manageExternalStorage.request().isGranted) {
@@ -74,6 +75,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
             ScaffoldMessenger.of(context)
                 .showSnackBar(SnackBar(content: Text('Recording started')));
           }
+          return _path;
         } else {
           print('Unable to get the external storage directory');
         }
@@ -83,6 +85,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
     } catch (e) {
       print('Error occurred while recording: $e');
     }
+    return null;
   }
 
 //Metodo per fermare la registrazione audio
@@ -99,7 +102,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   }
 
 //Metodo per caricare un file
-  Future<void> _uploadFile() async {
+  Future<String?> _uploadFile() async {
     FilePickerResult? result =
         await FilePicker.platform.pickFiles(allowMultiple: true);
 
@@ -112,6 +115,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
               '${appDirectory.path}/${file.path.split('/').last}';
           await file.copy(newPath);
           print('File copied to $newPath');
+          return newPath;
         }
       } else {
         print('Unable to get the external storage directory');
@@ -119,6 +123,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
     } else {
       print('No file selected');
     }
+    return null;
   }
 
   Future<void> inviaDati() async {
@@ -152,24 +157,35 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
               builder: (BuildContext context) {
                 return _isUserLoggedIn // Modifica questa parte
                     ? Icon(Icons.account_circle)
-                    : TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) =>
-                                    LoginPage()), // Naviga alla pagina di login
-                          );
-                        },
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: <Widget>[
-                            Icon(Icons.login), // Usa un'icona che preferisci
-                            Text(
-                              'Login',
-                              style: TextStyle(fontSize: 11),
+                    : Theme(
+                        data: Theme.of(context).copyWith(
+                          textButtonTheme: TextButtonThemeData(
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.black,
+                              backgroundColor:
+                                  Color.fromARGB(255, 199, 130, 255),
                             ),
-                          ],
+                          ),
+                        ),
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      LoginPage()), // Naviga alla pagina di login
+                            );
+                          },
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: <Widget>[
+                              Icon(Icons.login), // Usa un'icona che preferisci
+                              Text(
+                                'Login',
+                                style: TextStyle(fontSize: 11),
+                              ),
+                            ],
+                          ),
                         ),
                       );
               },
@@ -177,7 +193,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
             title: _isUserLoggedIn ? Text(_username) : null,
             actions: <Widget>[
               DropdownButton<String>(
-                items: <String>['Italiano', 'Inglese', 'Francese']
+                items: <String>['Italiano'] //'Inglese', 'Francese'
                     .map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
@@ -192,60 +208,137 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                TextField(
-                  controller: controller1,
-                  decoration: InputDecoration(
-                    hintText: 'Inserisci dei dati',
+                Padding(
+                  padding: const EdgeInsets.all(
+                      16.0), // Aggiunge 16 pixel di spazio intorno al TextField
+                  child: TextField(
+                    controller: controller1,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Color.fromARGB(
+                          255, 204, 255, 145), // Imposta il colore di sfondo
+                      hintText: 'Inserisci dei dati',
+                    ),
                   ),
                 ),
-                DropdownButton<String>(
-                  value: dropdownValue,
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      dropdownValue = newValue!;
-                    });
-                  },
-                  items: <String>[
-                    'Riassumi',
-                    'Migliora',
-                    'Crea risposta adeguata'
-                  ].map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: Color.fromARGB(255, 204, 255, 145),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: Theme(
+                      data: Theme.of(context).copyWith(
+                        canvasColor: Color.fromARGB(255, 204, 255, 145),
+                      ),
+                      child: DropdownButton<String>(
+                        value: dropdownValue,
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            dropdownValue = newValue!;
+                          });
+                        },
+                        items: <String>[
+                          'Riassumi',
+                          'Migliora',
+                          'Crea risposta adeguata'
+                        ].map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Container(
+                              width: 200, // Devi impostare una larghezza fissa
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20),
+                                color: Color.fromARGB(255, 204, 255, 145),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(value),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
                 ),
                 ListTile(
                   title: const Text('Lunghezza Risposta:'),
-                  trailing: DropdownButton<RispostaLunghezza>(
-                    value: _rispostaLunghezza,
-                    onChanged: (RispostaLunghezza? newValue) {
-                      setState(() {
-                        _rispostaLunghezza = newValue!;
-                        selectedIndex = RispostaLunghezza.values.indexOf(
-                            newValue); // Aggiorna l'indice quando il valore cambia
-                      });
-                    },
-                    items:
-                        RispostaLunghezza.values.map((RispostaLunghezza value) {
-                      return DropdownMenuItem<RispostaLunghezza>(
-                        value: value,
-                        child: Text(value.toString().split('.').last),
-                      );
-                    }).toList(),
+                  trailing: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      color: Color.fromARGB(255, 204, 255, 145),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: Theme(
+                        data: Theme.of(context).copyWith(
+                          canvasColor: Color.fromARGB(255, 204, 255,
+                              145), // Questo colora le opzioni del menu
+                        ),
+                        child: DropdownButton<RispostaLunghezza>(
+                          value: _rispostaLunghezza,
+                          onChanged: (RispostaLunghezza? newValue) {
+                            setState(() {
+                              _rispostaLunghezza = newValue!;
+                              selectedIndex =
+                                  RispostaLunghezza.values.indexOf(newValue);
+                            });
+                          },
+                          items: RispostaLunghezza.values
+                              .map((RispostaLunghezza value) {
+                            return DropdownMenuItem<RispostaLunghezza>(
+                              value: value,
+                              child: Container(
+                                width:
+                                    100, // Devi impostare una larghezza fissa
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(
+                                      20), // Questo arrotonda le opzioni
+                                  color: Color.fromARGB(255, 204, 255, 145),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text(value.toString().split('.').last),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                ElevatedButton(child: Text('Invia'), onPressed: inviaDati),
-                SelectableText(
-                  controller2.text,
-                  showCursor: true,
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.black,
+                    backgroundColor: Color.fromARGB(255, 199, 130,
+                        255), // Questo cambia il colore del testo
+                  ),
+                  child: Text('Invia'),
+                  onPressed: inviaDati,
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(
+                      16.0), // Aggiunge 16 pixel di spazio intorno al Container
+                  child: Container(
+                    color: Color.fromARGB(255, 204, 255, 145),
+                    child: SelectableText(
+                      controller2.text,
+                      showCursor: true,
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
           bottomNavigationBar: Builder(builder: (BuildContext context) {
             return BottomNavigationBar(
+              backgroundColor: Color.fromARGB(255, 204, 255, 145),
+              selectedItemColor: Color.fromARGB(255, 199, 130, 255),
+              unselectedItemColor:
+                  Color.fromARGB(255, 199, 130, 255).withOpacity(0.6),
               items: const <BottomNavigationBarItem>[
                 BottomNavigationBarItem(
                   icon: Icon(Icons.description),
@@ -269,13 +362,21 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                             builder: (context) => DocumentiPage()));
                     break;
                   case 1:
-                    await _record();
+                    String? filePath = await _record();
                     await Future.delayed(
-                        Duration(seconds: 5)); // Record for 1 second
+                        Duration(seconds: 5)); // Record for 5 seconds
                     await _stop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Audio inviato con successo')));
+                    controller2.text =
+                        (await apiService.inviaFileAudio(filePath!))!;
                     break;
                   case 2:
-                    await _uploadFile();
+                    String? fileDoc = await _uploadFile();
+                    controller2.text =
+                        (await apiService.inviaFileDocumento(fileDoc!))!;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('File inviato con successo')));
                     break;
                 }
               },
