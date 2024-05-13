@@ -126,23 +126,26 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
     return null;
   }
 
-  Future<void> inviaDati() async {
+  Future<String> inviaDati() async {
+    String val = "";
     switch (dropdownValue) {
       case 'Riassumi':
-        controller2.text = (await apiService.sendDataRiassumi(
+        val = (await apiService.sendDataRiassumi(
             controller1.text, selectedIndex))!;
         break;
       case 'Migliora':
-        controller2.text = (await apiService.sendDataMigliora(
+        val = (await apiService.sendDataMigliora(
             controller1.text, selectedIndex))!;
         break;
       case 'Crea risposta adeguata':
-        controller2.text = (await apiService.sendDataCreaRisposta(
+        val = (await apiService.sendDataCreaRisposta(
             controller1.text, selectedIndex))!;
         break;
       default:
         print('Selezione non valida');
     }
+
+    return val;
   }
 
 //Metodo build per la creazione dell'interfaccia grafica
@@ -317,7 +320,10 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                         255), // Questo cambia il colore del testo
                   ),
                   child: Text('Invia'),
-                  onPressed: inviaDati,
+                  onPressed: () async {
+                    controller2.text = await inviaDati();
+                    setState(() {});
+                  },
                 ),
                 Padding(
                   padding: const EdgeInsets.all(

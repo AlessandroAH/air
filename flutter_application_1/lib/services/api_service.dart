@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 
 //Classe che si occupa di inviare i dati al back-end
 class ApiService {
-  String ip = "192.168.1.45";
+  String ip = "192.168.91.92";
   //Metodo che invia i dati al back-end (Dati in formato stringa (La combo box e il testo inserito dall'utente))
   Future<String?> sendDataRiassumi(String data, int livello) async {
     var url = Uri.parse(
