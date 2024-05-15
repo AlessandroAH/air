@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 
 //Classe che si occupa di inviare i dati al back-end
 class ApiService {
-  String ip = "192.168.91.92";
+  String ip = "192.168.163.92";
   //Metodo che invia i dati al back-end (Dati in formato stringa (La combo box e il testo inserito dall'utente))
   Future<String?> sendDataRiassumi(String data, int livello) async {
     var url = Uri.parse(
@@ -41,14 +41,14 @@ class ApiService {
       try {
         var response = await http.post(
           url,
-          headers: {"Content-Type": "application/x-www-form-urlencoded"},
-          body: {'text': data, "level": livello.toString()},
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode({'text': data}),
         );
 
         // Se la richiesta ha avuto successo, stampa un messaggio di successo
         if (response.statusCode == 200) {
           print('Dati inviati con successo');
-          String val = jsonDecode(response.body)['summary'];
+          String val = jsonDecode(response.body)['improved'];
           return val;
         } else {
           print('Errore nel inviare i dati: ${response.statusCode}');
@@ -62,20 +62,20 @@ class ApiService {
 
   Future<String?> sendDataCreaRisposta(String data, int livello) async {
     var url = Uri.parse(
-        'http://$ip:8000/reply'); // Sostituisci con l'URL del tuo back-end
+        'http://$ip:8000/createReply'); // Sostituisci con l'URL del tuo back-end
     //Riempe il body della richiesta con i dati da inviare
     if (livello >= 0 && livello < 3) {
       try {
         var response = await http.post(
           url,
-          headers: {"Content-Type": "application/x-www-form-urlencoded"},
-          body: {'text': data, "level": livello.toString()},
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode({'text': data}),
         );
 
         // Se la richiesta ha avuto successo, stampa un messaggio di successo
         if (response.statusCode == 200) {
           print('Dati inviati con successo');
-          String val = jsonDecode(response.body)['summary'];
+          String val = jsonDecode(response.body)['reply'];
           return val;
         } else {
           print('Errore nel inviare i dati: ${response.statusCode}');
@@ -98,11 +98,9 @@ class ApiService {
       var risposta = await richiesta.send();
 
       if (risposta.statusCode == 200) {
-        print('File caricato con successo');
-        var rispostaStringa = await risposta.stream.bytesToString();
-        var rispostaJson = jsonDecode(rispostaStringa);
-        String val = rispostaJson['summary'];
-        return val;
+          print('Dati inviati con successo');
+          String val = jsonDecode(risposta.stream.toString())['summary'];
+          return val;
       } else {
         print('Errore nel caricamento del file: ${risposta.statusCode}');
         throw Exception(

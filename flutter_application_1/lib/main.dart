@@ -16,7 +16,7 @@ int selectedIndex =
 
 //Classe principale dell'applicazione
 void main() {
-  runApp(MyApp());
+  runApp(MaterialApp(home: MyApp()));
 }
 
 //Classe per la creazione dell'interfaccia grafica
@@ -84,6 +84,10 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
       }
     } catch (e) {
       print('Error occurred while recording: $e');
+      // Gestione dell'errore relativo alla mancanza di un ScaffoldMessenger
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+              'Error occurred while recording: $e'))); // Mostra un messaggio di errore usando SnackBar
     }
     return null;
   }
